@@ -2,9 +2,11 @@
 
 if [ $# -eq 0 ]; then
 	BASEDIR="/"
+	RESULTDIR="/usr/local/qualys/cloud-agent"
 	NETDIR_SCAN=false
 elif [ $# -eq 1 ]; then
 	BASEDIR=$1
+	RESULTDIR="/usr/local/qualys/cloud-agent"
 	if [ ! -d $BASEDIR ];then
 		echo "Please enter valid directory path";
 		exit 1;
@@ -12,7 +14,16 @@ elif [ $# -eq 1 ]; then
 	NETDIR_SCAN=false
 elif [ $# -eq 2 ]; then
 	BASEDIR=$1
-	NETDIR_SCAN=$2
+	RESULTDIR=$2
+	if [ ! -d $BASEDIR ]; then
+		echo "Please enter valid directory path";
+		exit 1;
+	fi;
+	NETDIR_SCAN=false
+elif [ $# -eq 3 ]; then
+	BASEDIR=$1
+	RESULTDIR=$2
+	NETDIR_SCAN=$3
 	if [ ! -d $BASEDIR ]; then
 		echo "Please enter valid directory path";
 		exit 1;
@@ -43,7 +54,7 @@ handle_war_ear_zip()
 handle_jar_without_zip()
 {	
 	jar_file=$1;	
-	echo "Zip/Unzip utility not present on the system, showing limited results for " $jar_file " only in output file" >> /usr/local/qualys/cloud-agent/log4j_findings.stderr;
+	echo "Zip/Unzip utility not present on the system, showing limited results for " $jar_file " only in output file" >> ${RESULTDIR}/log4j_findings.stderr;
 	
 	var=`echo $jar_file | grep -i "log4j.*jar"` 2> /dev/null; 
 	if [ ! -z "$var" ]; then 
@@ -120,8 +131,8 @@ handle_jar()
 log4j()
 {
 	echo "Script version: 2.0 (scans jar/war/ear/zip files)" ;
-    echo "Scanning started.." > /usr/local/qualys/cloud-agent/log4j_findings.stderr ;
-    date >> /usr/local/qualys/cloud-agent/log4j_findings.stderr ;    
+    echo "Scanning started.." > ${RESULTDIR}/log4j_findings.stderr ;
+    date >> ${RESULTDIR}/log4j_findings.stderr ;    
     id=`id`;
     if ! (echo $id | grep "uid=0")>/dev/null; then 
         echo "Please run the script as root user for complete results";
@@ -145,24 +156,24 @@ log4j()
 			if [ "$isZip" -eq 0 ] && [ "$isUnZip" -eq 0 ];then 
 				handle_war_ear_zip $i
 			else
-				echo "Zip/Unzip utility not present on the system, skipping processing of file: "$i >> /usr/local/qualys/cloud-agent/log4j_findings.stderr;
+				echo "Zip/Unzip utility not present on the system, skipping processing of file: "$i >> ${RESULTDIR}/log4j_findings.stderr;
 			fi
 		fi
 	done
 	if [ $log4j_exists -eq 0 ]; then
 		echo "No log4j jars found on the system, exiting now.";
 	fi;
-    echo "Run status : Success" >> /usr/local/qualys/cloud-agent/log4j_findings.stderr;
+    echo "Run status : Success" >> ${RESULTDIR}/log4j_findings.stderr;
 };
 
-if [ ! -d "/usr/local/qualys/cloud-agent/" ]; then 
-    mkdir -p "/usr/local/qualys/cloud-agent/";
-    chmod 750 "/usr/local/qualys/cloud-agent/";
+if [ ! -d "${RESULTDIR}" ]; then 
+    mkdir -p "${RESULTDIR}";
+    chmod 750 "${RESULTDIR}";
 fi; 
 
-if [ ! -f "/usr/local/qualys/cloud-agent/log4j_findings_disabled" ]; then 
-    log4j > /usr/local/qualys/cloud-agent/log4j_findings.stdout 2>/usr/local/qualys/cloud-agent/log4j_findings.stderr;
+if [ ! -f "${RESULTDIR}/log4j_findings_disabled" ]; then 
+    log4j > ${RESULTDIR}/log4j_findings.stdout 2>${RESULTDIR}/log4j_findings.stderr;
 else 
-    rm -rf /usr/local/qualys/cloud-agent/log4j_findings.stdout; 
-    echo "Flag is disabled, skipping command execution" > /usr/local/qualys/cloud-agent/log4j_findings.stderr;
+    rm -rf ${RESULTDIR}/cloud-agent/log4j_findings.stdout; 
+    echo "Flag is disabled, skipping command execution" > ${RESULTDIR}/log4j_findings.stderr;
 fi;
